@@ -16,6 +16,7 @@ import org.springframework.batch.core.configuration.annotation.JobBuilderFactory
 import org.springframework.batch.core.configuration.annotation.JobScope;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepScope;
+import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.item.*;
 import org.springframework.batch.item.amqp.builder.AmqpItemReaderBuilder;
 import org.springframework.batch.item.database.JpaItemWriter;
@@ -57,28 +58,28 @@ public class TqlParserConfig {
     @Bean
     public Job TqlParserJob() {
         return jobBuilderFactory.get("tqlParserJob")
-                .preventRestart()
                 .start(toKfParserStep(null, null))
+                .incrementer(new RunIdIncrementer()) //자동으로 run.id를 파라미터로 할당해 줌으로 재실행이 가능하도록 한다
                 .build();
     }
 
     @Bean
     @JobScope
     public Step toKfParserStep(@Value("#{jobParameters[downstreamHostname]}") String downstreamHostname, @Value("#{jobParameters[tqlDirectory]}") String tqlDirectory) {
+        System.out.println("aaa");
         return stepBuilderFactory.get("toKfParserStep")
                 .<ToKfTql, CatJobsrctagInfEntity>chunk(chunkSize)
-                .reader(reader(tqlDirectory))
-                .processor(processor(downstreamHostname))
-                .writer(writer())
+                .reader(itemReader(tqlDirectory))
+                .processor(itemProcessor(downstreamHostname))
+                .writer(itemWriter())
                 .build();
     }
 
     /*
      * ListItemReader : Paging이 필요없는 경우 메모리에 모두 올려서 처리. 데이터량이 많으면 Out of memory가 발생할 수 있다.
      */
-    @Bean
     @StepScope
-    public ListItemReader<ToKfTql> reader(String tqlDirectory) {
+    public ListItemReader<ToKfTql> itemReader(String tqlDirectory) {
         /*
          * 전체 .tql 파일 찾기
          */
@@ -94,23 +95,23 @@ public class TqlParserConfig {
         return new ListItemReader<>(list);
     }
 
-    @Bean
     @StepScope
-    public ItemProcessor<ToKfTql, CatJobsrctagInfEntity> processor(String downstreamHostname) {
+    public ItemProcessor<ToKfTql, CatJobsrctagInfEntity> itemProcessor(String downstreamHostname) {
         return item -> {
-            return tqlMapper.convert(item, downstreamHostname, downstreamHostname);
+            CatJobsrctagInfEntity entity = tqlMapper.convert(item, downstreamHostname, downstreamHostname);
+            logger.info("AAA : " + entity);
+            return entity;
         };
     }
 
-    @Bean
     @StepScope
-    public ItemWriter<CatJobsrctagInfEntity> writer() {
-        return catJobsrctagInfRepository::saveAll;
-    }
-
-//    public JpaItemWriter<CatJobsrctagInfEntity> writer() {
-//        JpaItemWriter<CatJobsrctagInfEntity> writer = new JpaItemWriter<>();
-//        writer.setEntityManagerFactory(entityManagerFactory);
-//        return writer;
+//    public ItemWriter<CatJobsrctagInfEntity> itemWriter() {
+//        return catJobsrctagInfRepository::saveAll;
 //    }
+
+    public JpaItemWriter<CatJobsrctagInfEntity> itemWriter() {
+        JpaItemWriter<CatJobsrctagInfEntity> writer = new JpaItemWriter<>();
+        writer.setEntityManagerFactory(entityManagerFactory);
+        return writer;
+    }
 }

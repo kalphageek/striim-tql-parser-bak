@@ -1,17 +1,14 @@
 package me.kalpha.catalog.striim.parser;
 
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 
 @NoArgsConstructor
-@Getter
-@Setter
+//@Getter @Setter
 @ToString
+@EqualsAndHashCode
 @Component
 public class ToKfTql {
     //    CatJobsrctagInfKey
@@ -26,4 +23,84 @@ public class ToKfTql {
     private String targetObjIpAddr;//kafkaCluster
     private String targetObjGbnCd;
     private String targetObjNm;//topicName
+
+    public String getJobSysIpAddr() {
+        return jobSysIpAddr;
+    }
+
+    public void setJobSysIpAddr(String jobSysIpAddr) {
+        this.jobSysIpAddr = jobSysIpAddr;
+    }
+
+    public String getJobNm() {
+        return jobNm;
+    }
+
+    public void setJobNm(String jobNm) {
+        this.jobNm = jobNm;
+    }
+
+    public String getSeqno() {
+        return seqno;
+    }
+
+    public void setSeqno(String seqno) {
+        this.seqno = seqno;
+    }
+
+    public String getCrtUserId() {
+        return crtUserId;
+    }
+
+    public void setCrtUserId(String crtUserId) {
+        this.crtUserId = crtUserId;
+    }
+
+    public LocalDateTime getCrtTm() {
+        return crtTm;
+    }
+
+    public void setCrtTm(LocalDateTime crtTm) {
+        this.crtTm = crtTm;
+    }
+
+    public String getSrcObjGbnCd() {
+        return srcObjGbnCd;
+    }
+
+    public void setSrcObjGbnCd(String srcObjGbnCd) {
+        this.srcObjGbnCd = srcObjGbnCd;
+    }
+
+    public String getSrcObjNm() {
+        return srcObjNm;
+    }
+
+    public void setSrcObjNm(String srcObjNm) {
+        this.srcObjNm = srcObjNm;
+    }
+
+    public String getTargetObjIpAddr() {
+        return targetObjIpAddr;
+    }
+
+    public void setTargetObjIpAddr(String targetObjIpAddr) {
+        this.targetObjIpAddr = targetObjIpAddr;
+    }
+
+    public String getTargetObjGbnCd() {
+        return targetObjGbnCd;
+    }
+
+    public void setTargetObjGbnCd(String targetObjGbnCd) {
+        this.targetObjGbnCd = targetObjGbnCd;
+    }
+
+    public String getTargetObjNm() {
+        return targetObjNm;
+    }
+
+    public void setTargetObjNm(String targetObjNm) {
+        this.targetObjNm = targetObjNm;
+    }
 }
