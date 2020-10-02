@@ -6,6 +6,8 @@ import me.kalpha.catalog.striim.parser.ToKfTql;
 import me.kalpha.catalog.striim.service.TqlService;
 import lombok.NoArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.modelmapper.PropertyMap;
+import org.modelmapper.TypeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.Job;
@@ -92,14 +94,26 @@ public class TqlParserConfig {
     @StepScope
     public ItemProcessor<ToKfTql, CatJobsrctagInfEntity> itemProcessor(String downstreamHostname) {
         return item -> {
+            if ( modelMapper.getTypeMap(ToKfTql.class, CatJobsrctagInfEntity.class) == null) {
+                PropertyMap<ToKfTql, CatJobsrctagInfEntity> propertyMap = new PropertyMap<ToKfTql, CatJobsrctagInfEntity>() {
+                    @Override
+                    protected void configure() {
+                        map().setSrcObjGbnCd("Trail File");
+                        map().setTargetObjGbnCd("topic");
+                        map().getKey().setJobSysIpAddr(downstreamHostname);
+                        map().setSrcObjIpAddr(downstreamHostname);
+                        skip().setSrcObjSchemaNm(null);
+                        skip().setTargetObjSchemaNm(null);
+                        skip().setLinPrivateYn(null);
+                        skip().setJobSysId(null);
+                    }
+                };
+                modelMapper.addMappings(propertyMap);
+            }
+
             CatJobsrctagInfEntity entity = modelMapper.map(item, CatJobsrctagInfEntity.class);
 
-            entity.setSrcObjGbnCd("Trail File");
-            entity.setTargetObjGbnCd("topic");
-            entity.getKey().setJobSysIpAddr(downstreamHostname);
-            entity.setSrcObjIpAddr(downstreamHostname);
-
-            logger.info("CatJobsrctagInfEntity : " + entity);
+            logger.info("CatJobsrctagInfEntity : " + entity.toString());
             return entity;
         };
     }
