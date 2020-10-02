@@ -18,23 +18,23 @@ import java.util.regex.Pattern;
 public class TqlParser {
     Logger logger  = LoggerFactory.getLogger(this.getClass());
 
-    public ToKfTql parseToKfTql(String filePath) {
+    public ToKfTql serializeToKfTql(String filePath) {
         ToKfTql tqlApp = new ToKfTql();
-        String tql = null;
+        String line = null;
 
         try {
             List<String> allLines = Files.readAllLines(Paths.get(filePath));
-            Optional<String> line = allLines.stream()
+            Optional<String> optional = allLines.stream()
                     .reduce((a, b) -> (a.replace("\n", " ")+" "+b.replace("\n", " ")));
-            tql = line.get();
-            logger.debug(tql);
+            line = optional.get();
+            logger.debug(line);
         } catch (IOException e) {
             e.printStackTrace();
         }
 
         final String regex = "CREATE +APPLICATION +(?<application>\\w+).*directory *: *'(?<directory>[\\w\\/]+)?'.*wildcard *: *'(?<wildcard>[\\w*]+)?'.*.*tables: +'(?<owner>\\w+)?.*CREATE[\\w ]+STREAM (?<topic>\\w+).*USING (?<kafkaCluster>[\\w.]+);";
         Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
-        Matcher matcher = pattern.matcher(tql);
+        Matcher matcher = pattern.matcher(line);
         while (matcher.find()) {
             tqlApp.setJobNm(matcher.group("application"));
             String sourceFile = matcher.group("directory")+"/";
@@ -57,7 +57,6 @@ public class TqlParser {
             Optional<String> line = allLines.stream()
                     .reduce((a, b) -> (a.replace("\n", " ")+" "+b.replace("\n", " ")));
             tql = line.get();
-            logger.debug(tql);
         } catch (IOException e) {
             e.printStackTrace();
         }

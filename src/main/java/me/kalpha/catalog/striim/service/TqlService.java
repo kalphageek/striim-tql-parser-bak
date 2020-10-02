@@ -19,13 +19,13 @@ public class TqlService {
     /*
      * downstream -> kafka 처리하는 .tql 파일 처리
      */
-    public List<ToKfTql> processToKfTql(File[] files) {
+    public List<ToKfTql> serialize(File[] files) {
         Stream<File> tqlFiles = Arrays.stream(files)
                 .filter(f -> f.getName().toLowerCase().contains("_to_kf_"));
-        List<ToKfTql> appList = tqlFiles
-                .map(f -> tqlParser.parseToKfTql(f.getAbsolutePath()))
+        List<ToKfTql> list = tqlFiles
+                .map(f -> tqlParser.serializeToKfTql(f.getAbsolutePath()))
                 .collect(Collectors.toList());
 
-        return appList;
+        return list;
     }
 }

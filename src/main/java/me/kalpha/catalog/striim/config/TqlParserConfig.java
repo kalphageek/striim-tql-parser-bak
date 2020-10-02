@@ -3,11 +3,9 @@ package me.kalpha.catalog.striim.config;
 import lombok.extern.slf4j.Slf4j;
 import me.kalpha.catalog.striim.entity.CatJobsrctagInfEntity;
 import me.kalpha.catalog.striim.parser.ToKfTql;
-import me.kalpha.catalog.striim.parser.TqlMapper;
-import me.kalpha.catalog.striim.parser.TqlParser;
-import me.kalpha.catalog.striim.repository.CatJobsrctagInfRepository;
 import me.kalpha.catalog.striim.service.TqlService;
 import lombok.NoArgsConstructor;
+import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.Job;
@@ -18,10 +16,8 @@ import org.springframework.batch.core.configuration.annotation.StepBuilderFactor
 import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.item.*;
-import org.springframework.batch.item.amqp.builder.AmqpItemReaderBuilder;
 import org.springframework.batch.item.database.JpaItemWriter;
 import org.springframework.batch.item.support.ListItemReader;
-import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -46,11 +42,9 @@ public class TqlParserConfig {
     EntityManagerFactory entityManagerFactory;
 
     @Autowired
-    CatJobsrctagInfRepository catJobsrctagInfRepository;
-    @Autowired
     TqlService tqlService;
     @Autowired
-    TqlMapper tqlMapper;
+    ModelMapper modelMapper;
 
     @Value("${chunkSize:1000}")
     private int chunkSize;
@@ -91,24 +85,26 @@ public class TqlParserConfig {
             }
         });
 
-        List<ToKfTql> list = tqlService.processToKfTql(files);
+        List<ToKfTql> list = tqlService.serialize(files);
         return new ListItemReader<>(list);
     }
 
     @StepScope
     public ItemProcessor<ToKfTql, CatJobsrctagInfEntity> itemProcessor(String downstreamHostname) {
         return item -> {
-            CatJobsrctagInfEntity entity = tqlMapper.convert(item, downstreamHostname, downstreamHostname);
-            logger.info("AAA : " + entity);
+            CatJobsrctagInfEntity entity = modelMapper.map(item, CatJobsrctagInfEntity.class);
+
+            entity.setSrcObjGbnCd("Trail File");
+            entity.setTargetObjGbnCd("topic");
+            entity.getKey().setJobSysIpAddr(downstreamHostname);
+            entity.setSrcObjIpAddr(downstreamHostname);
+
+            logger.info("CatJobsrctagInfEntity : " + entity);
             return entity;
         };
     }
 
     @StepScope
-//    public ItemWriter<CatJobsrctagInfEntity> itemWriter() {
-//        return catJobsrctagInfRepository::saveAll;
-//    }
-
     public JpaItemWriter<CatJobsrctagInfEntity> itemWriter() {
         JpaItemWriter<CatJobsrctagInfEntity> writer = new JpaItemWriter<>();
         writer.setEntityManagerFactory(entityManagerFactory);
