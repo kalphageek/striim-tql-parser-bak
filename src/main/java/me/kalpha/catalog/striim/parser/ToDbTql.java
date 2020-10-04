@@ -1,28 +1,47 @@
 package me.kalpha.catalog.striim.parser;
 
-import lombok.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
-@NoArgsConstructor
-//@Getter @Setter
-@ToString
-@EqualsAndHashCode
 @Component
-public class ToKfTql {
-    //    CatJobsrctagInfKey
+@Getter @Setter @ToString
+@NoArgsConstructor
+public class ToDbTql {
     private String jobSysIpAddr;//[striim cluster ip]--parameter로 전달
     private String jobNm;//appName
     private String seqno = "1";
 
     private String crtUserId = "striim-tql-parser";
     private LocalDateTime crtTm = LocalDateTime.now();
-    private String srcObjGbnCd;
-    private String srcObjNm;//srcName
-    private String targetObjIpAddr;//kafkaCluster
-    private String targetObjGbnCd;
-    private String targetObjNm;//topicName
+    private String srcObjGbnCd = "topic";
+    private String srcObjNm;//topicName
+    private String targetObjIpAddr;//hubdb
+    private String targetObjSchemaNm;//username
+    private String targetObjGbnCd = "table";
+    private List<String> targetObjNm;//tableNames
+
+    @Override
+    public String toString() {
+        return "ToDbTql{" +
+                "jobSysIpAddr='" + jobSysIpAddr + '\'' +
+                ", jobNm='" + jobNm + '\'' +
+                ", seqno='" + seqno + '\'' +
+                ", crtUserId='" + crtUserId + '\'' +
+                ", crtTm=" + crtTm +
+                ", srcObjGbnCd='" + srcObjGbnCd + '\'' +
+                ", srcObjNm='" + srcObjNm + '\'' +
+                ", targetObjIpAddr='" + targetObjIpAddr + '\'' +
+                ", targetObjSchemaNm='" + targetObjSchemaNm + '\'' +
+                ", targetObjGbnCd='" + targetObjGbnCd + '\'' +
+                ", targetObjNm=" + targetObjNm +
+                '}';
+    }
 
     public String getJobSysIpAddr() {
         return jobSysIpAddr;
@@ -88,6 +107,14 @@ public class ToKfTql {
         this.targetObjIpAddr = targetObjIpAddr;
     }
 
+    public String getTargetObjSchemaNm() {
+        return targetObjSchemaNm;
+    }
+
+    public void setTargetObjSchemaNm(String targetObjSchemaNm) {
+        this.targetObjSchemaNm = targetObjSchemaNm;
+    }
+
     public String getTargetObjGbnCd() {
         return targetObjGbnCd;
     }
@@ -96,11 +123,11 @@ public class ToKfTql {
         this.targetObjGbnCd = targetObjGbnCd;
     }
 
-    public String getTargetObjNm() {
+    public List<String> getTargetObjNm() {
         return targetObjNm;
     }
 
-    public void setTargetObjNm(String targetObjNm) {
+    public void setTargetObjNm(List<String> targetObjNm) {
         this.targetObjNm = targetObjNm;
     }
 }
