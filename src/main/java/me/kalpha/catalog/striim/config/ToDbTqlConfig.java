@@ -53,16 +53,16 @@ public class ToDbTqlConfig {
     private int chunkSize;
 
     @Bean
-    public Job tqlParserJob() {
+    public Job toDbTqlJob() {
         return jobBuilderFactory.get("toDbTqlJob")
-                .start(tqlParserStep(null, null))
+                .start(toDbTqlStep(null, null))
                 .incrementer(new RunIdIncrementer()) //자동으로 run.id를 파라미터로 할당해 줌으로 재실행이 가능하도록 한다
                 .build();
     }
 
     @Bean
     @JobScope
-    public Step tqlParserStep(@Value("#{jobParameters[striimHostname]}") String striimHostname, @Value("#{jobParameters[tqlDirectory]}") String tqlDirectory) {
+    public Step toDbTqlStep(@Value("#{jobParameters[striimHostname]}") String striimHostname, @Value("#{jobParameters[tqlDirectory]}") String tqlDirectory) {
         return stepBuilderFactory.get("toDbTqlStep")
                 .<ToDbTql, List<CatJobsrctagInfEntity>>chunk(chunkSize)
                 .reader(itemReader(tqlDirectory))

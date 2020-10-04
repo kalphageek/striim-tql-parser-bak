@@ -1,0 +1,19 @@
+USE db_Lakeadw;
+CREATE APPLICATION Kf_DCP_M14_Grp_1_to_hub_dcp_m14_GRP_1 recovery 5 xxx;
+
+CREATE OR REPLACE STREAM Topic_TimeStamp_Dcp_M14_Dcpadm_grp1 OF Global.WAEvent;
+
+CREATE OR REPLACE TARGET DCP_M14_GRP_1_DBRW USING DATABASEWRITER  (
+  DatabaseProxxx: 'Oracle',
+  Preserverxxx: 'true',
+  Username : 'HUBADM',
+  CommitPxx: 'disable',
+  ConnectionURL: 'jdbc:oracle:thin:@(DESCRIPTION=(ADDRESS_LIST=(ADDRESS=(PROTOCOL=TCP)(HOST=somehost1)(PORT=1521))(ADDRESS=(PROTOCOL=TCP)(HOST=somehost2)(PORT=1521)))(CONNECT_DATA=(SERVICE_NAME=ORCL)))',
+  Tables: 'DCPADM.DCP_CMNMSG_HIS,HUBADM.DCP_DCP_CMNMSG_HIS_M14 ColumnMap(Hub)load_tm=@userdata(TS));DCPADM.DCP_DCOLDERVITEM_DET,HUBADM.DCP_DCP_DCOLDERVITEM_DET_M14 ColumnMap(Hub)load_tm=@userdata(TS));DCPADM.DCP_DCOLITEMLIMIT_INF,HUBADM.DCP_DCP_DCOLITEMLIMIT_INF_M14 ColumnMap(Hub)load_tm=@userdata(TS))',
+  XXX
+)
+INPUT from topic_timestamp_dcp_m14_dcpadm_grp1;
+
+create or replace cq add xxx;
+
+end applicaiton kf_dcp_grp_1_to_hub_dcp_m14_grp_1;

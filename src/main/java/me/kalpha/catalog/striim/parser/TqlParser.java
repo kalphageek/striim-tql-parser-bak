@@ -35,16 +35,6 @@ public class TqlParser {
         return list;
     }
 
-    public List<ToDbTql> parseToDbTqls(File[] files) {
-        Stream<File> tqlFiles = Arrays.stream(files)
-                .filter(f -> f.getName().toLowerCase().contains("_to_HUB_"));
-        List<ToDbTql> list = tqlFiles
-                .map(f -> parseToDbTql(f.getAbsolutePath()))
-                .collect(Collectors.toList());
-
-        return list;
-    }
-
     private ToPsKfTql parseToPsKfTql(String filePath) {
         ToPsKfTql tqlApp = new ToPsKfTql();
         String line = null;
@@ -75,6 +65,16 @@ public class TqlParser {
         return tqlApp;
     }
 
+    public List<ToDbTql> parseToDbTqls(File[] files) {
+        Stream<File> tqlFiles = Arrays.stream(files)
+                .filter(f -> f.getName().toLowerCase().startsWith("ccc"));
+        List<ToDbTql> list = tqlFiles
+                .map(f -> parseToDbTql(f.getAbsolutePath()))
+                .collect(Collectors.toList());
+
+        return list;
+    }
+
     private ToDbTql parseToDbTql(String filePath) {
         ToDbTql tqlApp = new ToDbTql();
         String line = null;
@@ -97,11 +97,14 @@ public class TqlParser {
             tqlApp.setTargetObjSchemaNm(matcher.group("username"));
             tqlApp.setSrcObjNm(matcher.group("topicName"));
             tqlApp.setTargetObjIpAddr(matcher.group("hostname"));
-            Stream<String> stream = Arrays.stream(matcher.group("tables").split(";"))
-                    .map(s -> Arrays.asList(s.split(",")).get(1))
-                    .map(s -> Arrays.asList(s.toLowerCase().split(" columnmap")).get(0))
-                    .map(s -> Arrays.asList(s.split(".")).get(1));
-            tqlApp.setTargetObjNm(stream.collect(Collectors.toList()));
+            logger.debug("tables group : " + matcher.group("tables"));
+            List<String> tableList = Arrays.stream(matcher.group("tables").split(";"))
+                    .map(s -> s.split(",")[1])
+                    .map(s -> s.split(" ColumnMap")[0])
+                    .map(s -> s.split(".")[1])
+                    .collect(Collectors.toList());
+            tableList.forEach(System.out::println);
+            tqlApp.setTargetObjNm(tableList);
         }
 
         logger.debug(tqlApp.toString());
