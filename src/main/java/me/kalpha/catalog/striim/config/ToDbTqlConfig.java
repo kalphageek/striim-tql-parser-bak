@@ -1,10 +1,11 @@
 package me.kalpha.catalog.striim.config;
 
 import lombok.extern.slf4j.Slf4j;
+import me.kalpha.catalog.striim.common.JpaItemListWriter;
 import me.kalpha.catalog.striim.entity.CatJobsrctagInfEntity;
-import me.kalpha.catalog.striim.parser.ToPsKfTql;
-import lombok.NoArgsConstructor;
+import me.kalpha.catalog.striim.parser.ToDbTql;
 import me.kalpha.catalog.striim.parser.TqlParser;
+import lombok.NoArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.PropertyMap;
 import org.slf4j.Logger;
@@ -27,12 +28,13 @@ import org.springframework.context.annotation.Configuration;
 import javax.persistence.EntityManagerFactory;
 import java.io.File;
 import java.io.FilenameFilter;
+import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
 @Configuration
 @NoArgsConstructor
-public class TqlParserConfig {
+public class ToDbTqlConfig {
     Logger logger = LoggerFactory.getLogger(this.getClass());
 
     @Autowired
@@ -51,21 +53,21 @@ public class TqlParserConfig {
     private int chunkSize;
 
     @Bean
-    public Job toPsKfTqlJob() {
-        return jobBuilderFactory.get("toPsKfTqlJob")
-                .start(toPsKfTqlStep(null, null))
+    public Job tqlParserJob() {
+        return jobBuilderFactory.get("toDbTqlJob")
+                .start(tqlParserStep(null, null))
                 .incrementer(new RunIdIncrementer()) //자동으로 run.id를 파라미터로 할당해 줌으로 재실행이 가능하도록 한다
                 .build();
     }
 
     @Bean
     @JobScope
-    public Step toPsKfTqlStep(@Value("#{jobParameters[downstreamHostname]}") String downstreamHostname, @Value("#{jobParameters[tqlDirectory]}") String tqlDirectory) {
-        return stepBuilderFactory.get("toPsKfTqlStep")
-                .<ToPsKfTql, CatJobsrctagInfEntity>chunk(chunkSize)
+    public Step tqlParserStep(@Value("#{jobParameters[striimHostname]}") String striimHostname, @Value("#{jobParameters[tqlDirectory]}") String tqlDirectory) {
+        return stepBuilderFactory.get("toDbTqlStep")
+                .<ToDbTql, List<CatJobsrctagInfEntity>>chunk(chunkSize)
                 .reader(itemReader(tqlDirectory))
-                .processor(itemProcessor(downstreamHostname))
-                .writer(itemWriter())
+                .processor(itemProcessor(striimHostname))
+                .writer(itemListWriter())
                 .build();
     }
 
@@ -73,7 +75,7 @@ public class TqlParserConfig {
      * ListItemReader : Paging이 필요없는 경우 메모리에 모두 올려서 처리. 데이터량이 많으면 Out of memory가 발생할 수 있다.
      */
     @StepScope
-    public ListItemReader<ToPsKfTql> itemReader(String tqlDirectory) {
+    public ListItemReader<ToDbTql> itemReader(String tqlDirectory) {
         /*
          * 전체 .tql 파일 찾기
          */
@@ -85,41 +87,45 @@ public class TqlParserConfig {
             }
         });
 
-        List<ToPsKfTql> list = tqlParser.parseToPsKfTqls(files);
+        List<ToDbTql> list = tqlParser.parseToDbTqls(files);
+
         return new ListItemReader<>(list);
     }
 
     @StepScope
-    public ItemProcessor<ToPsKfTql, CatJobsrctagInfEntity> itemProcessor(String downstreamHostname) {
+    public ItemProcessor<ToDbTql, List<CatJobsrctagInfEntity>> itemProcessor(String striimHostname) {
         return item -> {
-            if ( modelMapper.getTypeMap(ToPsKfTql.class, CatJobsrctagInfEntity.class) == null) {
-                PropertyMap<ToPsKfTql, CatJobsrctagInfEntity> propertyMap = new PropertyMap<ToPsKfTql, CatJobsrctagInfEntity>() {
+            if ( modelMapper.getTypeMap(ToDbTql.class, CatJobsrctagInfEntity.class) == null) {
+                PropertyMap<ToDbTql, CatJobsrctagInfEntity> propertyMap = new PropertyMap<ToDbTql, CatJobsrctagInfEntity>() {
                     @Override
                     protected void configure() {
-                        map().setSrcObjGbnCd("Trail File");
-                        map().setTargetObjGbnCd("topic");
-                        map().getKey().setJobSysIpAddr(downstreamHostname);
-                        map().setSrcObjIpAddr(downstreamHostname);
+                        map().getKey().setJobSysIpAddr(striimHostname);
+                        map().setSrcObjIpAddr(striimHostname);
                         skip().setSrcObjSchemaNm(null);
-                        skip().setTargetObjSchemaNm(null);
                         skip().setLinPrivateYn(null);
                         skip().setJobSysId(null);
+                        skip().setTargetObjNm(null);
                     }
                 };
                 modelMapper.addMappings(propertyMap);
             }
 
-            CatJobsrctagInfEntity entity = modelMapper.map(item, CatJobsrctagInfEntity.class);
-
-            logger.info("CatJobsrctagInfEntity : " + entity.toString());
-            return entity;
+            List<CatJobsrctagInfEntity> list = new ArrayList<CatJobsrctagInfEntity>();
+            CatJobsrctagInfEntity mappedEntity = modelMapper.map(item, CatJobsrctagInfEntity.class);
+            for (String tableName:item.getTargetObjNm()) {
+                CatJobsrctagInfEntity entity = mappedEntity;
+                entity.setTargetObjNm(tableName);
+                list.add(entity);
+                logger.info("CatJobsrctagInfEntity : " + entity.toString());
+            }
+            return list;
         };
     }
 
     @StepScope
-    public JpaItemWriter<CatJobsrctagInfEntity> itemWriter() {
+    public JpaItemListWriter<CatJobsrctagInfEntity> itemListWriter() {
         JpaItemWriter<CatJobsrctagInfEntity> writer = new JpaItemWriter<>();
         writer.setEntityManagerFactory(entityManagerFactory);
-        return writer;
+        return new JpaItemListWriter<>(writer);
     }
 }
