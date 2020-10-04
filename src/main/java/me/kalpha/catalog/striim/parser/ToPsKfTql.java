@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 @ToString
 @EqualsAndHashCode
 @Component
-public class ToKfTql {
+public class ToPsKfTql {
     //    CatJobsrctagInfKey
     private String jobSysIpAddr;//[striim cluster ip]--parameter로 전달
     private String jobNm;//appName
@@ -18,10 +18,10 @@ public class ToKfTql {
 
     private String crtUserId = "striim-tql-parser";
     private LocalDateTime crtTm = LocalDateTime.now();
-    private String srcObjGbnCd;
+    private String srcObjGbnCd = "Trail File";
     private String srcObjNm;//srcName
     private String targetObjIpAddr;//kafkaCluster
-    private String targetObjGbnCd;
+    private String targetObjGbnCd = "topic";
     private String targetObjNm;//topicName
 
     public String getJobSysIpAddr() {
